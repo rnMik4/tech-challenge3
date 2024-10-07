@@ -6,6 +6,7 @@ import com.restaurantes.entity.Restaurante;
 import com.restaurantes.entity.Usuario;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -34,49 +35,58 @@ public class ReservasRepositoryTest {
         openMocks.close();
     }
 
-    @Test
-    void devePermitirSalvarReserva(){
-        var reserva = gerarReserva();
-        when(repository.save(any(Reservas.class))).thenReturn(reserva);
-        var result = repository.save(reserva);
+    @Nested
+    class SalvarReserva {
 
-        assertThat(result).isNotNull();
-        verify(repository, times(1)).save(any(Reservas.class));
+        @Test
+        void devePermitirSalvarReserva() {
+            var reserva = gerarReserva();
+            when(repository.save(any(Reservas.class))).thenReturn(reserva);
+            var result = repository.save(reserva);
+
+            assertThat(result).isNotNull();
+            verify(repository, times(1)).save(any(Reservas.class));
+        }
     }
 
+    @Nested
+    class ExcluirReserva {
 
+        @Test
+        void devePermitirExcluir() {
+            var id = new Random().nextLong();
+            doNothing().when(repository).deleteById(any(Long.class));
 
-    @Test
-    void devePermitirExcluirExcluir(){
-        var id = new Random().nextLong();
-        doNothing().when(repository).deleteById(any(Long.class));
+            repository.deleteById(id);
 
-        repository.deleteById(id);
+            verify(repository, times(1)).deleteById(any(Long.class));
+        }
 
-        verify(repository, times(1)).deleteById(any(Long.class));
     }
 
+    @Nested
+    class BuscarReserva {
+        @Test
+        void devePermitirConsultarReservaPeloId() {
+            var id = new Random().nextLong();
+            var reserva = gerarReserva();
+            reserva.setId(id);
 
-    @Test
-    void devePermitirConsultarReservaPeloId(){
-        var id = new Random().nextLong();
-        var reserva = gerarReserva();
-        reserva.setId(id);
+            when(repository.findById(any(Long.class)))
+                    .thenReturn(Optional.of(reserva));
 
-        when(repository.findById(any(Long.class)))
-                .thenReturn(Optional.of(reserva));
+            var resultOpcional = repository.findById(id);
 
-        var resultOpcional = repository.findById(id);
+            assertThat(resultOpcional)
+                    .isPresent()
+                    .contains(reserva);
 
-        assertThat(resultOpcional)
-                .isPresent()
-                .contains(reserva);
+            resultOpcional.ifPresent(result -> {
+                assertThat(result.getId()).isEqualTo(id);
+            });
 
-        resultOpcional.ifPresent(result -> {
-            assertThat(result.getId()).isEqualTo(id);
-        });
-
-        verify(repository, times(1)).findById(any(Long.class));
+            verify(repository, times(1)).findById(any(Long.class));
+        }
     }
 
     private Reservas gerarReserva(){

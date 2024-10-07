@@ -1,7 +1,10 @@
 package com.restaurantes.service.impl;
 
 import com.restaurantes.DTO.ReservasDTO;
+import com.restaurantes.entity.MesasRestaurante;
 import com.restaurantes.entity.Reservas;
+import com.restaurantes.entity.Restaurante;
+import com.restaurantes.entity.Usuario;
 import com.restaurantes.exceptions.ResourceNotFoundException;
 import com.restaurantes.repository.MesasRepository;
 import com.restaurantes.repository.ReservasRepository;
@@ -27,13 +30,17 @@ public class ReservasServiceImpl implements ReservasService {
     private final ReservasRepository reservasRepository;
 
     @Autowired
-    private MesasService mesasService;
+    MesasService mesasService;
 
     @Autowired
-    private UsuarioService usuarioService;
+    UsuarioService usuarioService;
 
     @Autowired
-    private RestauranteService restauranteService;
+    UsuarioRepository usuarioRepository;
+
+    @Autowired
+    RestauranteService restauranteService;
+
 
     @Override
     public Reservas addReserva(ReservasDTO reserva) {
@@ -53,13 +60,35 @@ public class ReservasServiceImpl implements ReservasService {
     public Reservas updateReserva(ReservasDTO reserva, Long id) {
         Reservas reservas = getReservaById(id);
 
+        Usuario usuario = usuarioService.getUsuario(reserva.idUsuario());
+        if (usuario == null) {
+            throw new RuntimeException("Usuario nao existente");
+        }else{
+            reservas.setUsuario(usuario);
+        }
+        MesasRestaurante mesa = mesasService.getMesaById(reserva.idMesa());
+        if (mesa == null) {
+            throw new RuntimeException("Mesa nao existente");
+        }else{
+            reservas.setMesa(mesa);
+        }
+
+        Restaurante restaurante = restauranteService.getRestauranteById(id);
+        if(restaurante == null){
+            throw new RuntimeException("Restaurante nao existente");
+        }else {
+            reservas.setRestaurante(restaurante);
+        }
         LocalDateTime lt = LocalDateTime.now();
         reservas.setDataHoraAtualizacao(lt);
         reservas.setStatusReserva(reserva.statusReserva());
-        reservas.setUsuario(usuarioService.getUsuario(reserva.idUsuario()));
-        reservas.setMesa(mesasService.getMesaById(reserva.idMesa()));
-        reservas.setRestaurante(restauranteService.getRestauranteById(reserva.idRestaurante()));
         return reservasRepository.save(reservas);
+    }
+
+
+    private Usuario getUsuario(Long idUsuario){
+        return usuarioRepository.findById(idUsuario)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
     }
 
     @Override

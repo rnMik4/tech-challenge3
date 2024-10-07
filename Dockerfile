@@ -5,7 +5,7 @@ WORKDIR /app
 COPY pom.xml .
 COPY src ./src
 
-RUN mvn clean install package -DskipTests
+RUN mvn clean install package
 
 FROM openjdk:21-jdk-slim
 

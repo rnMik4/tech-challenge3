@@ -7,6 +7,7 @@ import com.restaurantes.repository.UsuarioRepository;
 import com.restaurantes.service.impl.UsuarioServiceImpl;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -41,109 +42,106 @@ public class UsuarioServiceTest {
         mock.close();
     }
 
+    @Nested
+    class CadastraUsuario {
 
-    @Test
-    void devePermitirRegistrarUsuario(){
-        var usuario = gerarUsuario();
-        usuario.setId(new Random().nextLong());
-        when(repository.save(any(Usuario.class))).thenReturn(usuario);
+        @Test
+        void devePermitirRegistrarUsuario() {
+            var usuario = gerarUsuario();
+            usuario.setId(new Random().nextLong());
+            when(repository.save(any(Usuario.class))).thenReturn(usuario);
 
-        UsuarioReqDTO dto = new UsuarioReqDTO(usuario.getNomeCompleto(), usuario.getEmail(), usuario.getSenha(), usuario.getTelefone());
+            UsuarioReqDTO dto = new UsuarioReqDTO(usuario.getNomeCompleto(), usuario.getEmail(), usuario.getSenha(), usuario.getTelefone());
 
-        var usuarioRegistrado = service.novoUsuario(dto);
+            var usuarioRegistrado = service.novoUsuario(dto);
 
-        assertThat(usuarioRegistrado)
-                .isInstanceOf(Usuario.class)
-                .isNotNull();
+            assertThat(usuarioRegistrado)
+                    .isInstanceOf(Usuario.class)
+                    .isNotNull();
 
-        assertThat(usuarioRegistrado.getNomeCompleto()).isEqualTo(usuario.getNomeCompleto());
-        assertThat(usuarioRegistrado.getEmail()).isEqualTo(usuario.getEmail());
+            assertThat(usuarioRegistrado.getNomeCompleto()).isEqualTo(usuario.getNomeCompleto());
+            assertThat(usuarioRegistrado.getEmail()).isEqualTo(usuario.getEmail());
 
-        verify(repository, times(1)).save(any(Usuario.class));
+            verify(repository, times(1)).save(any(Usuario.class));
+        }
     }
 
-    @Test
-    void devePermitirConsultarUsuarioPeloId(){
-        var id = new Random().nextLong();
-        var usuario = gerarUsuario();
-        usuario.setId(id);
+    @Nested
+    class ConsultaUsuario {
 
-        when(repository.findById(any(Long.class)))
-                .thenReturn(Optional.of(usuario));
+        @Test
+        void devePermitirConsultarUsuarioPeloId() {
+            var id = new Random().nextLong();
+            var usuario = gerarUsuario();
+            usuario.setId(id);
 
-        var resultOpcional = repository.findById(id);
+            when(repository.findById(any(Long.class)))
+                    .thenReturn(Optional.of(usuario));
 
-        assertThat(resultOpcional)
-                .isPresent()
-                .contains(usuario);
+            var resultOpcional = repository.findById(id);
 
-        resultOpcional.ifPresent(result -> {
-            assertThat(result.getId()).isEqualTo(id);
-        });
+            assertThat(resultOpcional)
+                    .isPresent()
+                    .contains(usuario);
 
-        verify(repository, times(1)).findById(any(Long.class));
+            resultOpcional.ifPresent(result -> {
+                assertThat(result.getId()).isEqualTo(id);
+            });
+
+            verify(repository, times(1)).findById(any(Long.class));
+        }
+
+        @Test
+        void deveGerarExcecaoQuandoNaoEncontrado(){
+            var id = new Random().nextLong();
+            when(repository.findById(id))
+                    .thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> service.getUsuario(id))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessage("Usuário não encontrado");
+
+            verify(repository, times(1)).findById(id);
+
+        }
     }
 
-    @Test
-    void devePermitirAlterarUsuario(){
-        var id = new Random().nextLong();
-        var usuarioAntigo = gerarUsuario();
-        usuarioAntigo.setId(id);
+    @Nested
+    class AtualizarUsuario {
 
-        var usuarioNovo = new Usuario();
-        usuarioNovo.setNomeCompleto(usuarioAntigo.getNomeCompleto());
-        usuarioNovo.setEmail(usuarioAntigo.getEmail());
-        usuarioNovo.setSenha(usuarioAntigo.getSenha());
-        usuarioNovo.setId(usuarioAntigo.getId());
-        usuarioNovo.setTelefone("11980332233");
-        UsuarioReqDTO usuarioNovoDTO = new UsuarioReqDTO(usuarioNovo.getNomeCompleto(),
-                usuarioNovo.getEmail(), usuarioNovo.getSenha(), usuarioNovo.getTelefone());
+        @Test
+        void devePermitirAlterarUsuario() {
+            var id = new Random().nextLong();
+            var usuarioAntigo = gerarUsuario();
+            usuarioAntigo.setId(id);
 
-        when(repository.findById(id)).thenReturn(Optional.of(usuarioAntigo));
-        when(repository.save(any(Usuario.class))).thenAnswer(i -> i.getArgument(0));
+            var usuarioNovo = new Usuario();
+            usuarioNovo.setNomeCompleto(usuarioAntigo.getNomeCompleto());
+            usuarioNovo.setEmail(usuarioAntigo.getEmail());
+            usuarioNovo.setSenha(usuarioAntigo.getSenha());
+            usuarioNovo.setId(usuarioAntigo.getId());
+            usuarioNovo.setTelefone("11980332233");
+            UsuarioReqDTO usuarioNovoDTO = new UsuarioReqDTO(usuarioNovo.getNomeCompleto(),
+                    usuarioNovo.getEmail(), usuarioNovo.getSenha(), usuarioNovo.getTelefone());
 
-
-
-        var usuarioObtido = service.updateUsuario(usuarioNovoDTO, id);
-
-        assertThat(usuarioObtido).isInstanceOf(Usuario.class).isNotNull();
-        assertThat(usuarioObtido.getId()).isEqualTo(usuarioNovo.getId());
-
-        verify(repository, times(1)).findById(id);
-        verify(repository, times(1)).save(usuarioNovo);
+            when(repository.findById(id)).thenReturn(Optional.of(usuarioAntigo));
+            when(repository.save(any(Usuario.class))).thenAnswer(i -> i.getArgument(0));
 
 
+            var usuarioObtido = service.updateUsuario(usuarioNovoDTO, id);
+
+            assertThat(usuarioObtido).isInstanceOf(Usuario.class).isNotNull();
+            assertThat(usuarioObtido.getId()).isEqualTo(usuarioNovo.getId());
+
+            verify(repository, times(1)).findById(id);
+            verify(repository, times(1)).save(usuarioNovo);
+
+
+        }
     }
 
-    @Test
-    void devePermitirConsultarUsuario(){
-        var usuario = gerarUsuario();
-        var id = new Random().nextLong();
-        usuario.setId(id);
-        when(repository.findById(id))
-                .thenReturn(Optional.of(usuario));
 
-        var usuarioObtido = service.getUsuario(id);
 
-        assertThat(usuarioObtido)
-                .isEqualTo(usuario);
-
-        verify(repository, times(1)).findById(any(Long.class));
-    }
-
-    @Test
-    void deveGerarExcecaoQuandoNaoEncontrado(){
-        var id = new Random().nextLong();
-        when(repository.findById(id))
-                .thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> service.getUsuario(id))
-                .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessage("Usuário não encontrado");
-
-        verify(repository, times(1)).findById(id);
-
-    }
 
 
 

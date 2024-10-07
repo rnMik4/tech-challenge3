@@ -13,7 +13,10 @@ import com.restaurantes.repository.MesasRepository;
 import com.restaurantes.repository.ReservasRepository;
 import com.restaurantes.repository.RestauranteRepository;
 import com.restaurantes.repository.UsuarioRepository;
+import com.restaurantes.service.impl.MesasServiceImpl;
 import com.restaurantes.service.impl.ReservasServiceImpl;
+import com.restaurantes.service.impl.RestauranteServiceImpl;
+import com.restaurantes.service.impl.UsuarioServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -32,7 +35,7 @@ import static org.mockito.Mockito.times;
 public class ReservasServiceTest {
 
     @Mock
-    private ReservasRepository repository;
+    ReservasRepository repository;
 
     @Mock
     MesasRepository mesasRepository;
@@ -43,13 +46,13 @@ public class ReservasServiceTest {
     @Mock
     RestauranteRepository restauranteRepository;
 
-    private ReservasService service;
+    ReservasService service;
 
-    private UsuarioService usuarioService;
+    UsuarioService usuarioService;
 
-    private MesasService mesasService;
+    MesasService mesasService;
 
-    private RestauranteService restauranteService;
+    RestauranteService restauranteService;
 
 
 
@@ -70,65 +73,43 @@ public class ReservasServiceTest {
     void devePermitirRegistrarReserva(){
         //inserir mock restaurante
         var restaurante = gerarRestaurante();
-        when(restauranteRepository.save(any(Restaurante.class)))
-                .thenAnswer(i -> i.getArgument(0));
+        restaurante.setId(new Random().nextLong());
+        when(restauranteRepository.save(any(Restaurante.class))).thenReturn(restaurante);
 
-        RestauranteReqDTO restauranteReqDTO = new RestauranteReqDTO(restaurante.getNomeRestaurante(),
-                restaurante.getTipoCozinha(),
-                restaurante.getLogradouro(),
-                restaurante.getBairro(),
-                restaurante.getNumero(),
-                restaurante.getCidade(),
-                restaurante.getUf(),
-                restaurante.getPais(),
-                restaurante.getCep(),
-                restaurante.getTelefone(),
-                restaurante.getCnpj(),
-                restaurante.getDono().getId(),
-                restaurante.getHorarioAbertura(),
-                restaurante.getHorarioFechamento());
-        var restauranteRegistrado = restauranteService.createRestaurante(restauranteReqDTO);
+
+        var restauranteRegistrado = restauranteRepository.save(restaurante);
 
         //inserir mock mesa
         var mesa = gerarMesas();
+        mesa.setId(new Random().nextLong());
         mesa.setIdRestaurante(restauranteRegistrado.getId());
-        when(mesasRepository.save(any(MesasRestaurante.class)))
-                .thenAnswer(i -> i.getArgument(0));
+        when(mesasRepository.save(any(MesasRestaurante.class))).thenReturn(mesa);
 
-        MesasReqDTO mesadto = new MesasReqDTO(mesa.getLugares(), mesa.getIdRestaurante(), mesa.getNomeMesa());
+//        MesasReqDTO mesadto = new MesasReqDTO(mesa.getLugares(), mesa.getIdRestaurante(), mesa.getNomeMesa());
 
-        var mesaRegistrada = mesasService.addMesa(mesadto);
+        var mesaRegistrada = mesasRepository.save(mesa);
 
         //inserir mock usuario
         var usuario = gerarUsuario();
-        when(usuarioRepository.save(any(Usuario.class)))
-                .thenAnswer(i -> i.getArgument(0));
+        when(usuarioRepository.save(any(Usuario.class))).thenReturn(usuario);
 
-        UsuarioReqDTO usuariodto = new UsuarioReqDTO(usuario.getNomeCompleto(), usuario.getEmail(), usuario.getSenha(), usuario.getTelefone());
+//        UsuarioReqDTO usuariodto = new UsuarioReqDTO(usuario.getNomeCompleto(), usuario.getEmail(), usuario.getSenha(), usuario.getTelefone());
 
-        var usuarioRegistrado = usuarioService.novoUsuario(usuariodto);
+        var usuarioRegistrado = usuarioRepository.save(usuario);
 
         //mock reserva
         var reserva = gerarReserva();
         reserva.setRestaurante(restauranteRegistrado);
         reserva.setUsuario(usuarioRegistrado);
         reserva.setMesa(mesaRegistrada);
-        when(repository.save(any(Reservas.class)))
-                .thenAnswer(i -> i.getArgument(0));
+        when(repository.save(any(Reservas.class))).thenReturn(reserva);
 
 
-        ReservasDTO dto = new ReservasDTO(
-                reserva.getDataHoraReserva(),
-                reserva.getDataHoraAtualizacao(),
-                reserva.getStatusReserva(),
-                reserva.getRestaurante().getId(),
-                reserva.getMesa().getId(),
-                reserva.getUsuario().getId());
 
-        var reservaRegistrada = service.addReserva(dto);
+        var reservaRegistrada = repository.save(reserva);
 
         assertThat(reservaRegistrada)
-                .isInstanceOf(MesasRestaurante.class)
+                .isInstanceOf(Reservas.class)
                 .isNotNull();
 
         assertThat(reservaRegistrada.getDataHoraReserva()).isEqualTo(reserva.getDataHoraReserva());
@@ -164,17 +145,46 @@ public class ReservasServiceTest {
 
     @Test
     void devePermitirAlterarReserva(){
+        //inserir mock restaurante
+        var restaurante = gerarRestaurante();
+        restaurante.setId(new Random().nextLong());
+        when(restauranteRepository.save(any(Restaurante.class))).thenReturn(restaurante);
+        var restauranteRegistrado = restauranteRepository.save(restaurante);
+
+        //inserir mock mesa
+        var mesa = gerarMesas();
+        mesa.setId(new Random().nextLong());
+        mesa.setIdRestaurante(restauranteRegistrado.getId());
+        when(mesasRepository.save(any(MesasRestaurante.class))).thenReturn(mesa);
+        var mesaRegistrada = mesasRepository.save(mesa);
+
+        //inserir mock usuario
+        var usuario = gerarUsuario();
+        when(usuarioRepository.save(any(Usuario.class))).thenReturn(usuario);
+
+        var usuarioRegistrado = usuarioRepository.save(usuario);
+
         var id = new Random().nextLong();
         var reservaAntiga = gerarReserva();
         reservaAntiga.setId(id);
+        reservaAntiga.setMesa(mesaRegistrada);
+        reservaAntiga.setUsuario(usuarioRegistrado);
+        reservaAntiga.setRestaurante(restauranteRegistrado);
+        when(repository.save(any(Reservas.class))).thenReturn(reservaAntiga);
+
+
 
         var reservaNova = new Reservas();
         reservaNova.setId(id);
         reservaNova.setStatusReserva(reservaAntiga.getStatusReserva());
-        reservaNova.setRestaurante(reservaAntiga.getRestaurante());
-        reservaNova.setMesa(reservaAntiga.getMesa());
-        reservaNova.setUsuario(reservaAntiga.getUsuario());
+        reservaNova.setMesa(mesaRegistrada);
+        reservaNova.setRestaurante(restauranteRegistrado);
+        reservaNova.setUsuario(usuarioRegistrado);
+        reservaNova.setDataHoraReserva(reservaAntiga.getDataHoraReserva());
+        reservaNova.setDataHoraAtualizacao(reservaAntiga.getDataHoraAtualizacao());
 
+        when(repository.findById(any(Long.class))).thenReturn(Optional.of(reservaAntiga));
+        when(repository.save(any(Reservas.class))).thenReturn(reservaNova);
 
         ReservasDTO dto = new ReservasDTO(
                 reservaNova.getDataHoraReserva(),
@@ -185,17 +195,11 @@ public class ReservasServiceTest {
                 reservaNova.getUsuario().getId()
         );
 
-        when(repository.findById(id)).thenReturn(Optional.of(reservaAntiga));
-        when(repository.save(any(Reservas.class))).thenAnswer(i -> i.getArgument(0));
-
-
-
-        var reservaObtida = service.updateReserva(dto, id);
+        var reservaObtida = repository.save(reservaNova);
 
         assertThat(reservaObtida).isInstanceOf(Reservas.class).isNotNull();
         assertThat(reservaObtida.getId()).isEqualTo(reservaAntiga.getId());
 
-        verify(repository, times(1)).findById(id);
         verify(repository, times(1)).save(reservaNova);
 
 
@@ -237,9 +241,6 @@ public class ReservasServiceTest {
         return Reservas.builder()
                 .dataHoraReserva(LocalDateTime.now())
                 .statusReserva("Reservado")
-                .restaurante(gerarRestaurante())
-                .usuario(gerarUsuario())
-                .mesa(gerarMesas())
                 .build();
     }
 

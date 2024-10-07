@@ -8,6 +8,7 @@ import com.restaurantes.exceptions.ResourceNotFoundException;
 import com.restaurantes.repository.AvaliacoesRepository;
 import com.restaurantes.service.impl.AvaliacoesServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -40,83 +41,92 @@ public class AvaliacoesServiceTest {
         mock.close();
     }
 
-    @Test
-    void devePermitirRegistrarAvaliacao(){
-        var avaliacao = gerarAvaliacoes();
-        when(repository.save(any(Avaliacoes.class))).thenReturn(avaliacao);
+    @Nested
+    class RegistrarAvaliacoes {
 
-        AvaliacoesReqDTO dto = new AvaliacoesReqDTO(avaliacao.getAvaliacao(),
-                avaliacao.getComentario(),
-                avaliacao.getIdReserva(),
-                avaliacao.getIdRestaurante());
+        @Test
+        void devePermitirRegistrarAvaliacao() {
+            var avaliacao = gerarAvaliacoes();
+            when(repository.save(any(Avaliacoes.class))).thenReturn(avaliacao);
 
-        var avaliacaoRegistrada = service.createAvaliacao(dto);
+            AvaliacoesReqDTO dto = new AvaliacoesReqDTO(avaliacao.getAvaliacao(),
+                    avaliacao.getComentario(),
+                    avaliacao.getIdReserva(),
+                    avaliacao.getIdRestaurante());
 
-        assertThat(avaliacaoRegistrada)
-                .isInstanceOf(Avaliacoes.class)
-                .isNotNull();
+            var avaliacaoRegistrada = service.createAvaliacao(dto);
+
+            assertThat(avaliacaoRegistrada)
+                    .isInstanceOf(Avaliacoes.class)
+                    .isNotNull();
 
 
-        verify(repository, times(1)).save(any(Avaliacoes.class));
+            verify(repository, times(1)).save(any(Avaliacoes.class));
+        }
     }
 
-    @Test
-    void devePermitirConsultarAvaliacoesPeloId(){
-        var id = new Random().nextLong();
-        var avaliacao = gerarAvaliacoes();
-        avaliacao.setId(id);
+    @Nested
+    class ConsultarAvaliacoes {
+        @Test
+        void devePermitirConsultarAvaliacoesPeloId() {
+            var id = new Random().nextLong();
+            var avaliacao = gerarAvaliacoes();
+            avaliacao.setId(id);
 
-        when(repository.findById(any(Long.class)))
-                .thenReturn(Optional.of(avaliacao));
+            when(repository.findById(any(Long.class)))
+                    .thenReturn(Optional.of(avaliacao));
 
-        var resultOpcional = repository.findById(id);
+            var resultOpcional = repository.findById(id);
 
-        assertThat(resultOpcional)
-                .isPresent()
-                .contains(avaliacao);
+            assertThat(resultOpcional)
+                    .isPresent()
+                    .contains(avaliacao);
 
-        resultOpcional.ifPresent(result -> {
-            assertThat(result.getId()).isEqualTo(id);
-        });
+            resultOpcional.ifPresent(result -> {
+                assertThat(result.getId()).isEqualTo(id);
+            });
 
-        verify(repository, times(1)).findById(any(Long.class));
+            verify(repository, times(1)).findById(any(Long.class));
+        }
     }
 
-    @Test
-    void devePermitirAlterarAvaliacao(){
-        var id = new Random().nextLong();
-        var avaliacaoAntiga = gerarAvaliacoes();
-        avaliacaoAntiga.setId(id);
+    @Nested
+    class AlterarAvaliacoes {
+        @Test
+        void devePermitirAlterarAvaliacao() {
+            var id = new Random().nextLong();
+            var avaliacaoAntiga = gerarAvaliacoes();
+            avaliacaoAntiga.setId(id);
 
-        var avaliacaoNova = new Avaliacoes();
-        avaliacaoNova.setId(avaliacaoAntiga.getId());
-        avaliacaoNova.setAvaliacao(8);
-        avaliacaoNova.setComentario("Quase perfeito");
-        avaliacaoNova.setIdReserva(avaliacaoAntiga.getIdReserva());
-        avaliacaoNova.setIdRestaurante(avaliacaoAntiga.getIdRestaurante());
+            var avaliacaoNova = new Avaliacoes();
+            avaliacaoNova.setId(avaliacaoAntiga.getId());
+            avaliacaoNova.setAvaliacao(8);
+            avaliacaoNova.setComentario("Quase perfeito");
+            avaliacaoNova.setIdReserva(avaliacaoAntiga.getIdReserva());
+            avaliacaoNova.setIdRestaurante(avaliacaoAntiga.getIdRestaurante());
 
-        AvaliacoesReqDTO dto = new AvaliacoesReqDTO(
-                avaliacaoNova.getAvaliacao(),
-                avaliacaoNova.getComentario(),
-                avaliacaoNova.getIdReserva(),
-                avaliacaoNova.getIdRestaurante()
-        );
+            AvaliacoesReqDTO dto = new AvaliacoesReqDTO(
+                    avaliacaoNova.getAvaliacao(),
+                    avaliacaoNova.getComentario(),
+                    avaliacaoNova.getIdReserva(),
+                    avaliacaoNova.getIdRestaurante()
+            );
 
-        when(repository.findById(id)).thenReturn(Optional.of(avaliacaoAntiga));
-        when(repository.save(any(Avaliacoes.class))).thenReturn(avaliacaoNova);
+            when(repository.findById(id)).thenReturn(Optional.of(avaliacaoAntiga));
+            when(repository.save(any(Avaliacoes.class))).thenReturn(avaliacaoNova);
 
-        var avaliacaoObtida = service.updateAvaliacao(dto, id);
+            var avaliacaoObtida = service.updateAvaliacao(dto, id);
 
-        assertThat(avaliacaoObtida).isInstanceOf(Avaliacoes.class).isNotNull();
-        assertThat(avaliacaoObtida.getId()).isEqualTo(avaliacaoNova.getId());
+            assertThat(avaliacaoObtida).isInstanceOf(Avaliacoes.class).isNotNull();
+            assertThat(avaliacaoObtida.getId()).isEqualTo(avaliacaoNova.getId());
 
-        verify(repository, times(1)).findById(id);
-        verify(repository, times(1)).save(avaliacaoNova);
+            verify(repository, times(1)).findById(id);
+            verify(repository, times(1)).save(avaliacaoNova);
 
+
+        }
 
     }
-
-
     private Avaliacoes gerarAvaliacoes(){
 
         return Avaliacoes.builder()

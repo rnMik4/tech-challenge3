@@ -6,6 +6,7 @@ import com.restaurantes.exceptions.ResourceNotFoundException;
 import com.restaurantes.repository.MesasRepository;
 import com.restaurantes.service.impl.MesasServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -38,107 +39,104 @@ public class MesasServiceTest {
         mock.close();
     }
 
-    @Test
-    void devePermitirRegistrarMesa(){
-        var mesa = gerarMesas();
-        when(repository.save(any(MesasRestaurante.class))).thenReturn(mesa);
+    @Nested
+    class RegistrarMesa {
 
-        MesasReqDTO dto = new MesasReqDTO(mesa.getLugares(), mesa.getIdRestaurante(), mesa.getNomeMesa());
+        @Test
+        void devePermitirRegistrarMesa() {
+            var mesa = gerarMesas();
+            when(repository.save(any(MesasRestaurante.class))).thenReturn(mesa);
 
-        var mesaRegistrada = service.addMesa(dto);
+            MesasReqDTO dto = new MesasReqDTO(mesa.getLugares(), mesa.getIdRestaurante(), mesa.getNomeMesa());
 
-        assertThat(mesaRegistrada)
-                .isInstanceOf(MesasRestaurante.class)
-                .isNotNull();
+            var mesaRegistrada = service.addMesa(dto);
 
-        assertThat(mesaRegistrada.getNomeMesa()).isEqualTo(mesa.getNomeMesa());
-        assertThat(mesaRegistrada.getLugares()).isEqualTo(mesa.getLugares());
-        assertThat(mesaRegistrada.getIdRestaurante()).isEqualTo(mesa.getIdRestaurante());
+            assertThat(mesaRegistrada)
+                    .isInstanceOf(MesasRestaurante.class)
+                    .isNotNull();
 
-        verify(repository, times(1)).save(any(MesasRestaurante.class));
+            assertThat(mesaRegistrada.getNomeMesa()).isEqualTo(mesa.getNomeMesa());
+            assertThat(mesaRegistrada.getLugares()).isEqualTo(mesa.getLugares());
+            assertThat(mesaRegistrada.getIdRestaurante()).isEqualTo(mesa.getIdRestaurante());
+
+            verify(repository, times(1)).save(any(MesasRestaurante.class));
+        }
     }
 
-    @Test
-    void devePermitirConsultarMesasPeloId(){
-        var id = new Random().nextLong();
-        var mesa = gerarMesas();
-        mesa.setId(id);
+    @Nested
+    class ConsultarMesa {
 
-        when(repository.findById(any(Long.class)))
-                .thenReturn(Optional.of(mesa));
+        @Test
+        void devePermitirConsultarMesasPeloId() {
+            var id = new Random().nextLong();
+            var mesa = gerarMesas();
+            mesa.setId(id);
 
-        var resultOpcional = repository.findById(id);
+            when(repository.findById(any(Long.class)))
+                    .thenReturn(Optional.of(mesa));
 
-        assertThat(resultOpcional)
-                .isPresent()
-                .contains(mesa);
+            var resultOpcional = repository.findById(id);
 
-        resultOpcional.ifPresent(result -> {
-            assertThat(result.getId()).isEqualTo(id);
-        });
+            assertThat(resultOpcional)
+                    .isPresent()
+                    .contains(mesa);
 
-        verify(repository, times(1)).findById(any(Long.class));
+            resultOpcional.ifPresent(result -> {
+                assertThat(result.getId()).isEqualTo(id);
+            });
+
+            verify(repository, times(1)).findById(any(Long.class));
+        }
+
+        @Test
+        void deveGerarExcecaoQuandoNaoEncontrado(){
+            var id = new Random().nextLong();
+            when(repository.findById(id))
+                    .thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> service.getMesaById(id))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessage("Mesa não encontrada");
+
+            verify(repository, times(1)).findById(id);
+
+        }
     }
 
-    @Test
-    void devePermitirAlterarMesa(){
-        var id = new Random().nextLong();
-        var mesaAntiga = gerarMesas();
-        mesaAntiga.setId(id);
+    @Nested
+    class AlterarMesa {
+        @Test
+        void devePermitirAlterarMesa() {
+            var id = new Random().nextLong();
+            var mesaAntiga = gerarMesas();
+            mesaAntiga.setId(id);
 
-        var mesaNova = new MesasRestaurante();
-        mesaNova.setNomeMesa(mesaAntiga.getNomeMesa());
-        mesaNova.setLugares(mesaAntiga.getLugares());
-        mesaNova.setId(mesaAntiga.getId());
-        mesaNova.setLugares(mesaAntiga.getLugares());
+            var mesaNova = new MesasRestaurante();
+            mesaNova.setNomeMesa(mesaAntiga.getNomeMesa());
+            mesaNova.setLugares(mesaAntiga.getLugares());
+            mesaNova.setId(mesaAntiga.getId());
+            mesaNova.setLugares(mesaAntiga.getLugares());
 
-        MesasReqDTO dto = new MesasReqDTO(mesaNova.getLugares(), mesaNova.getIdRestaurante(), mesaNova.getNomeMesa());
+            MesasReqDTO dto = new MesasReqDTO(mesaNova.getLugares(), mesaNova.getIdRestaurante(), mesaNova.getNomeMesa());
 
-        when(repository.findById(id)).thenReturn(Optional.of(mesaAntiga));
-        when(repository.save(any(MesasRestaurante.class))).thenAnswer(i -> i.getArgument(0));
-
-
-
-        var mesaObtida = service.updateMesa(dto, id);
-
-        assertThat(mesaObtida).isInstanceOf(MesasRestaurante.class).isNotNull();
-        assertThat(mesaObtida.getId()).isEqualTo(mesaNova.getId());
-
-        verify(repository, times(1)).findById(id);
-        verify(repository, times(1)).save(mesaNova);
+            when(repository.findById(id)).thenReturn(Optional.of(mesaAntiga));
+            when(repository.save(any(MesasRestaurante.class))).thenAnswer(i -> i.getArgument(0));
 
 
+            var mesaObtida = service.updateMesa(dto, id);
+
+            assertThat(mesaObtida).isInstanceOf(MesasRestaurante.class).isNotNull();
+            assertThat(mesaObtida.getId()).isEqualTo(mesaNova.getId());
+
+            verify(repository, times(1)).findById(id);
+            verify(repository, times(1)).save(mesaNova);
+
+
+        }
     }
 
-    @Test
-    void devePermitirConsultarMesa(){
-        var mesa = gerarMesas();
-        var id = new Random().nextLong();
-        mesa.setId(id);
-        when(repository.findById(id))
-                .thenReturn(Optional.of(mesa));
 
-        var mesaObtida = service.getMesaById(id);
 
-        assertThat(mesaObtida)
-                .isEqualTo(mesa);
-
-        verify(repository, times(1)).findById(any(Long.class));
-    }
-
-    @Test
-    void deveGerarExcecaoQuandoNaoEncontrado(){
-        var id = new Random().nextLong();
-        when(repository.findById(id))
-                .thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> service.getMesaById(id))
-                .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessage("Mesa não encontrada");
-
-        verify(repository, times(1)).findById(id);
-
-    }
 
 
 

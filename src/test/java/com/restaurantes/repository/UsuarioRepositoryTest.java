@@ -3,6 +3,7 @@ package com.restaurantes.repository;
 import com.restaurantes.entity.Usuario;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -30,28 +31,33 @@ public class UsuarioRepositoryTest {
         openMocks.close();
     }
 
-    @Test
-    void devePermitirCadastrarUsuario(){
-        var usuario = gerarUsuario();
-        when(repository.save(any(Usuario.class))).thenReturn(usuario);
-        var result = repository.save(usuario);
+    @Nested
+    class CadastraUsuario {
 
-        assertThat(result).isNotNull();
-        verify(repository, times(1)).save(any(Usuario.class));
+        @Test
+        void devePermitirCadastrarUsuario() {
+            var usuario = gerarUsuario();
+            when(repository.save(any(Usuario.class))).thenReturn(usuario);
+            var result = repository.save(usuario);
+
+            assertThat(result).isNotNull();
+            verify(repository, times(1)).save(any(Usuario.class));
+        }
+
     }
 
+    @Nested
+    class ExcluirUsuario {
+        @Test
+        void devePermitirExcluirUsuario() {
+            var id = new Random().nextLong();
+            doNothing().when(repository).deleteById(any(Long.class));
 
+            repository.deleteById(id);
 
-    @Test
-    void devePermitirExcluirUsuario(){
-        var id = new Random().nextLong();
-        doNothing().when(repository).deleteById(any(Long.class));
-
-        repository.deleteById(id);
-
-        verify(repository, times(1)).deleteById(any(Long.class));
+            verify(repository, times(1)).deleteById(any(Long.class));
+        }
     }
-
 
 
 

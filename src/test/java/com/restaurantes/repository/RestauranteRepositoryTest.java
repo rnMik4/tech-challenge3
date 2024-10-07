@@ -4,6 +4,7 @@ import com.restaurantes.entity.Restaurante;
 import com.restaurantes.entity.Usuario;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -31,49 +32,58 @@ public class RestauranteRepositoryTest {
         openMocks.close();
     }
 
-    @Test
-    void devePermitirCadastrarRestaurante(){
-        var restaurante = gerarRestaurante();
-        when(restauranteRepository.save(any(Restaurante.class))).thenReturn(restaurante);
-        var result = restauranteRepository.save(restaurante);
+    @Nested
+    class CadastraRestaurante {
 
-        assertThat(result).isNotNull();
-        verify(restauranteRepository, times(1)).save(any(Restaurante.class));
+        @Test
+        void devePermitirCadastrarRestaurante() {
+            var restaurante = gerarRestaurante();
+            when(restauranteRepository.save(any(Restaurante.class))).thenReturn(restaurante);
+            var result = restauranteRepository.save(restaurante);
+
+            assertThat(result).isNotNull();
+            verify(restauranteRepository, times(1)).save(any(Restaurante.class));
+        }
+
     }
 
+    @Nested
+    class ExcluirRestaurante {
 
+        @Test
+        void devePermitirExcluirRestaurante() {
+            var id = new Random().nextLong();
+            doNothing().when(restauranteRepository).deleteById(any(Long.class));
 
-    @Test
-    void devePermitirExcluirRestaurante(){
-        var id = new Random().nextLong();
-        doNothing().when(restauranteRepository).deleteById(any(Long.class));
+            restauranteRepository.deleteById(id);
 
-        restauranteRepository.deleteById(id);
-
-        verify(restauranteRepository, times(1)).deleteById(any(Long.class));
+            verify(restauranteRepository, times(1)).deleteById(any(Long.class));
+        }
     }
 
+    @Nested
+    class BuscaRestaurante {
+        @Test
+        void devePermitirConsultarRestaurantePeloId() {
+            var id = new Random().nextLong();
+            var restaurante = gerarRestaurante();
+            restaurante.setId(id);
 
-    @Test
-    void devePermitirConsultarRestaurantePeloId(){
-        var id = new Random().nextLong();
-        var restaurante = gerarRestaurante();
-        restaurante.setId(id);
+            when(restauranteRepository.findById(any(Long.class)))
+                    .thenReturn(Optional.of(restaurante));
 
-        when(restauranteRepository.findById(any(Long.class)))
-                .thenReturn(Optional.of(restaurante));
+            var resultOpcional = restauranteRepository.findById(id);
 
-        var resultOpcional = restauranteRepository.findById(id);
+            assertThat(resultOpcional)
+                    .isPresent()
+                    .contains(restaurante);
 
-        assertThat(resultOpcional)
-                .isPresent()
-                .contains(restaurante);
+            resultOpcional.ifPresent(result -> {
+                assertThat(result.getId()).isEqualTo(id);
+            });
 
-        resultOpcional.ifPresent(result -> {
-            assertThat(result.getId()).isEqualTo(id);
-        });
-
-        verify(restauranteRepository, times(1)).findById(any(Long.class));
+            verify(restauranteRepository, times(1)).findById(any(Long.class));
+        }
     }
 
     private Usuario gerarDonoRestaurante(){

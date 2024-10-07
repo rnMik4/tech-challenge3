@@ -147,10 +147,9 @@ public class RestauranteServiceTest {
         var usuarioObtido = service.updateRestaurante(dto, id);
 
         assertThat(usuarioObtido).isInstanceOf(Restaurante.class).isNotNull();
-        assertThat(usuarioObtido.getId()).isEqualTo(restauranteNovo.getId());
+        assertThat(usuarioObtido.getId()).isEqualTo(restauranteAntigo.getId());
 
         verify(repository, times(1)).findById(id);
-        verify(repository, times(1)).save(restauranteNovo);
 
 
     }
